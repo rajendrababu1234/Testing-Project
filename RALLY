@@ -1,0 +1,55 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Rally.RestApi.Json;
+using Rally.RestApi;
+using Rally.RestApi.Response;
+
+namespace RESTAPIRALLY
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string username = "paul@acme.com";
+            string password = "Just4Rally";
+            string serverUrl = "https://preview.rallydev.com";
+
+            // Initialize the REST API. You can specify a web service version if needed in the constructor.
+            RallyRestApi restApi = new RallyRestApi();
+            restApi.Authenticate(username, password, serverUrl, proxy: null, allowSSO: false);
+
+            //Create an item
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate["TestCase"] = "/testcase/<TestCase OID>";
+            toCreate["Workspace"] = "/workspace/<Workspace OID>";
+            toCreate["Build"] = "9";
+            toCreate["Verdict"] = "Pass";
+            toCreate["Date"] = "2016-05-09T16:14:00";
+            CreateResult createResult = restApi.Create("defect", toCreate);
+
+            //Update the item
+            DynamicJsonObject toUpdate = new DynamicJsonObject();
+            toUpdate["Description"] = "This is my defect.";
+            OperationResult updateResult = restApi.Update(createResult.Reference, toUpdate);
+
+            //Get the item
+            DynamicJsonObject item = restApi.GetByReference(createResult.Reference);
+
+            //Query for items
+            Request request = new Request("defect");
+            request.Fetch = new List<string>() { "Name", "Description", "FormattedID" };
+            request.Query = new Query("Name", Query.Operator.Equals, "My Defect");
+            QueryResult queryResult = restApi.Query(request);
+            foreach (var result in queryResult.Results)
+            {
+                //Process item as needed
+            }
+
+            //Delete the item
+            OperationResult deleteResult = restApi.Delete(createResult.Reference);
+        }
+    }
+}
